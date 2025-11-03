@@ -5,6 +5,8 @@ import requests
 import csv
 import os
 import pytz
+import threading
+import time
 
 app = Flask(__name__)
 
@@ -40,7 +42,7 @@ def ping_website():
         ping_count += 1
         now = datetime.now(IST)
         date_str = now.strftime("%d-%m-%Y")
-        time_str = now.strftime("%I:%M:%S %p")  # 12-hour format
+        time_str = now.strftime("%I:%M:%S %p")
         last_ping = f"{date_str} {time_str}"
 
         # Save to CSV
@@ -57,36 +59,29 @@ def ping_website():
             csv.writer(f).writerow([ping_count, date_str, time_str, "Error", "0"])
         print(f"❌ Ping failed at {date_str} {time_str}: {e}")
 
+# ==== Auto-start thread ====
+def auto_start_pinger():
+    global pinger_running, uptime_start
+    time.sleep(2)  # small delay to ensure server starts
+    if not pinger_running:
+        pinger_running = True
+        uptime_start = datetime.now(IST)
+        ping_website()  # first ping immediately
+        scheduler.add_job(ping_website, "interval", minutes=5, id="auto_pinger", replace_existing=True)
+        print("🚀 Auto Pinger Started (Ping every 5 minutes)")
+
+# Run the auto starter in background
+threading.Thread(target=auto_start_pinger, daemon=True).start()
+
 # ==== Routes ====
 @app.route("/")
 def index():
     return render_template("index.html", target_url=TARGET_URL)
 
-@app.route("/start", methods=["POST"])
-def start_pinger():
-    global pinger_running, uptime_start
-    if not pinger_running:
-        pinger_running = True
-        uptime_start = datetime.now(IST)
-        ping_website()
-        scheduler.add_job(ping_website, "interval", minutes=5, id="auto_pinger", replace_existing=True)
-    return jsonify({"status": "started", "message": "Pinger started successfully."})
-
-@app.route("/stop", methods=["POST"])
-def stop_pinger():
-    global pinger_running
-    pinger_running = False
-    try:
-        scheduler.remove_job("auto_pinger")
-    except:
-        pass
-    return jsonify({"status": "stopped"})
-
 @app.route("/status")
 def get_status():
     uptime = "00:00:00"
     if pinger_running and uptime_start:
-        # Ensure both are timezone-aware
         now_ist = datetime.now(IST)
         uptime_seconds = (now_ist - uptime_start).total_seconds()
         hrs, rem = divmod(uptime_seconds, 3600)
@@ -106,4 +101,5 @@ def download_logs():
 
 # ==== Run App ====
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    print("🌐 Starting Flask Pinger Dashboard at http://127.0.0.1:5000/")
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
