@@ -18,7 +18,7 @@ pinger_running = False
 # Timezone for India
 IST = pytz.timezone("Asia/Kolkata")
 
-scheduler = BackgroundScheduler(timezone=IST)
+scheduler = BackgroundScheduler(timezone="Asia/Kolkata")
 scheduler.start()
 
 LOG_FILE = "ping_logs.csv"
@@ -47,12 +47,15 @@ def ping_website():
         with open(LOG_FILE, "a", newline="") as f:
             csv.writer(f).writerow([ping_count, date_str, time_str, response.status_code, duration_ms])
 
-    except Exception:
+        print(f"✅ Ping {ping_count}: {TARGET_URL} - {response.status_code} at {last_ping}")
+
+    except Exception as e:
         now = datetime.now(IST)
         date_str = now.strftime("%d-%m-%Y")
         time_str = now.strftime("%I:%M:%S %p")
         with open(LOG_FILE, "a", newline="") as f:
             csv.writer(f).writerow([ping_count, date_str, time_str, "Error", "0"])
+        print(f"❌ Ping failed at {date_str} {time_str}: {e}")
 
 # ==== Routes ====
 @app.route("/")
@@ -83,8 +86,13 @@ def stop_pinger():
 def get_status():
     uptime = "00:00:00"
     if pinger_running and uptime_start:
-        diff = datetime.now(IST) - uptime_start
-        uptime = str(diff).split(".")[0]
+        # Ensure both are timezone-aware
+        now_ist = datetime.now(IST)
+        uptime_seconds = (now_ist - uptime_start).total_seconds()
+        hrs, rem = divmod(uptime_seconds, 3600)
+        mins, secs = divmod(rem, 60)
+        uptime = f"{int(hrs):02}:{int(mins):02}:{int(secs):02}"
+
     return jsonify({
         "status": "Running" if pinger_running else "Stopped",
         "ping_count": ping_count,
