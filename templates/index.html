@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌍 Auto Pinger Dashboard</title>
+
+  <style>
+    /* ==== GLOBAL STYLES ==== */
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #0b132b, #1c2541, #3a506b);
+      color: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #00bcd4;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px #00bcd4;
+    }
+
+    p {
+      margin: 4px 0;
+      font-size: 1rem;
+    }
+
+    /* ==== CARD ==== */
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0, 188, 212, 0.2);
+      padding: 25px 30px;
+      width: 85%;
+      max-width: 340px;
+      margin-top: 15px;
+      backdrop-filter: blur(8px);
+      animation: fadeIn 1s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ==== TEXT STYLES ==== */
+    .status {
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 12px;
+      transition: 0.3s;
+    }
+
+    .status.running {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      box-shadow: 0 0 10px #4caf50;
+    }
+
+    .status.stopped {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+      box-shadow: 0 0 10px #f44336;
+    }
+
+    #countdown {
+      color: #00e676;
+      font-weight: bold;
+      font-size: 1.3rem;
+    }
+
+    /* ==== BUTTONS ==== */
+    .btn-group {
+      margin-top: 15px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 22px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+      font-weight: 600;
+      color: white;
+      transition: 0.3s ease;
+    }
+
+    .start {
+      background: linear-gradient(135deg, #00c853, #009688);
+      box-shadow: 0 0 15px rgba(0, 200, 83, 0.5);
+    }
+
+    .stop {
+      background: linear-gradient(135deg, #ff5252, #d32f2f);
+      box-shadow: 0 0 15px rgba(255, 82, 82, 0.5);
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+
+    .download {
+      background: linear-gradient(135deg, #2196f3, #03a9f4);
+      margin-top: 20px;
+      box-shadow: 0 0 15px rgba(33, 150, 243, 0.4);
+    }
+
+    /* ==== MOBILE ==== */
+    @media (max-width: 500px) {
+      h1 { font-size: 1.4rem; }
+      .card { width: 90%; padding: 20px; }
+      button { width: 90%; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌐 Auto Pinger Dashboard</h1>
+  <p>Target: <b>{{ target_url }}</b></p>
+
+  <div class="card">
+    <p>Status: <span id="status" class="status stopped">Stopped ❌</span></p>
+    <p>Ping Count: <span id="pingCount">0</span></p>
+    <p>Last Ping: <span id="lastPing">-</span></p>
+    <p>Uptime: <span id="uptime">00:00:00</span></p>
+    <p>Next Ping In: <span id="countdown">05:00</span></p>
+  </div>
+
+  <div class="btn-group">
+    <button id="startBtn" class="start">▶ Start</button>
+    <button id="stopBtn" class="stop">⏹ Stop</button>
+  </div>
+
+  <button class="download" onclick="window.location='/download'">💾 Download Logs</button>
+
+  <script>
+    let countdown = 300;
+    let timer, statusCheck;
+
+    function formatTime(s) {
+      const m = String(Math.floor(s / 60)).padStart(2, "0");
+      const sec = String(s % 60).padStart(2, "0");
+      return `${m}:${sec}`;
+    }
+
+    function updateCountdown() {
+      if (countdown > 0) countdown--;
+      else countdown = 300;
+      document.getElementById("countdown").textContent = formatTime(countdown);
+    }
+
+    async function updateStatus() {
+      const res = await fetch("/status");
+      const data = await res.json();
+      document.getElementById("pingCount").textContent = data.ping_count;
+      document.getElementById("lastPing").textContent = data.last_ping;
+      document.getElementById("uptime").textContent = data.uptime;
+
+      const statusEl = document.getElementById("status");
+      if (data.status === "Running") {
+        statusEl.textContent = "Running ✅";
+        statusEl.className = "status running";
+      } else {
+        statusEl.textContent = "Stopped ❌";
+        statusEl.className = "status stopped";
+      }
+    }
+
+    document.getElementById("startBtn").addEventListener("click", async () => {
+      await fetch("/start", { method: "POST" });
+      countdown = 300;
+      clearInterval(timer);
+      timer = setInterval(updateCountdown, 1000);
+      if (!statusCheck) statusCheck = setInterval(updateStatus, 2000);
+      updateStatus();
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", async () => {
+      await fetch("/stop", { method: "POST" });
+      clearInterval(timer);
+      clearInterval(statusCheck);
+      statusCheck = null;
+      document.getElementById("countdown").textContent = "00:00";
+      updateStatus();
+    });
+
+    // Update every 2s on load
+    updateStatus();
+  </script>
+</body>
+</html>
