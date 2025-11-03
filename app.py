@@ -4,16 +4,21 @@ from datetime import datetime
 import requests
 import csv
 import os
+import pytz
 
 app = Flask(__name__)
 
 # ==== Configuration ====
-TARGET_URL = "https://unique-5.onrender.com"  # your website
+TARGET_URL = "https://unique-5.onrender.com"  # your target website
 ping_count = 0
 last_ping = None
 uptime_start = None
 pinger_running = False
-scheduler = BackgroundScheduler()
+
+# Timezone for India
+IST = pytz.timezone("Asia/Kolkata")
+
+scheduler = BackgroundScheduler(timezone=IST)
 scheduler.start()
 
 LOG_FILE = "ping_logs.csv"
@@ -28,25 +33,24 @@ if not os.path.exists(LOG_FILE):
 def ping_website():
     global ping_count, last_ping
     try:
-        start_time = datetime.now()
+        start_time = datetime.now(IST)
         response = requests.get(TARGET_URL, timeout=10)
-        duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+        duration_ms = int((datetime.now(IST) - start_time).total_seconds() * 1000)
 
         ping_count += 1
-        now = datetime.now()
+        now = datetime.now(IST)
         date_str = now.strftime("%d-%m-%Y")
-        time_str = now.strftime("%H:%M:%S")
+        time_str = now.strftime("%I:%M:%S %p")  # 12-hour format
         last_ping = f"{date_str} {time_str}"
 
         # Save to CSV
         with open(LOG_FILE, "a", newline="") as f:
             csv.writer(f).writerow([ping_count, date_str, time_str, response.status_code, duration_ms])
 
-    except Exception as e:
-        # Log failed pings too
-        now = datetime.now()
+    except Exception:
+        now = datetime.now(IST)
         date_str = now.strftime("%d-%m-%Y")
-        time_str = now.strftime("%H:%M:%S")
+        time_str = now.strftime("%I:%M:%S %p")
         with open(LOG_FILE, "a", newline="") as f:
             csv.writer(f).writerow([ping_count, date_str, time_str, "Error", "0"])
 
@@ -60,15 +64,10 @@ def start_pinger():
     global pinger_running, uptime_start
     if not pinger_running:
         pinger_running = True
-        uptime_start = datetime.now()
-
-        # Immediate ping
+        uptime_start = datetime.now(IST)
         ping_website()
-
-        # Schedule next pings every 5 minutes
         scheduler.add_job(ping_website, "interval", minutes=5, id="auto_pinger", replace_existing=True)
-
-    return jsonify({"status": "started", "message": "Pinger started and first ping done immediately."})
+    return jsonify({"status": "started", "message": "Pinger started successfully."})
 
 @app.route("/stop", methods=["POST"])
 def stop_pinger():
@@ -84,7 +83,7 @@ def stop_pinger():
 def get_status():
     uptime = "00:00:00"
     if pinger_running and uptime_start:
-        diff = datetime.now() - uptime_start
+        diff = datetime.now(IST) - uptime_start
         uptime = str(diff).split(".")[0]
     return jsonify({
         "status": "Running" if pinger_running else "Stopped",
@@ -99,4 +98,4 @@ def download_logs():
 
 # ==== Run App ====
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
