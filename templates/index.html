@@ -3,202 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🌍 Auto Pinger Dashboard</title>
+  <title>🌐 Website Pinger Dashboard</title>
 
   <style>
-    /* ==== GLOBAL STYLES ==== */
+    /* ==== Base Styling ==== */
     body {
-      margin: 0;
       font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #0b132b, #1c2541, #3a506b);
-      color: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      overflow: hidden;
+      background: radial-gradient(circle at top left, #0a0a0f, #121212, #1f1f1f);
+      color: #e0f7fa;
       text-align: center;
+      padding: 50px 20px;
+      min-height: 100vh;
     }
 
     h1 {
-      font-size: 1.8rem;
-      color: #00bcd4;
-      margin-bottom: 8px;
-      text-shadow: 0 0 10px #00bcd4;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      color: #4fc3f7;
+      text-shadow: 0 0 10px #03a9f4, 0 0 20px #0288d1;
+      letter-spacing: 1px;
+      animation: glow 2s ease-in-out infinite alternate;
     }
 
-    p {
-      margin: 4px 0;
-      font-size: 1rem;
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #03a9f4; }
+      to { text-shadow: 0 0 20px #81d4fa, 0 0 30px #03a9f4; }
     }
 
-    /* ==== CARD ==== */
-    .card {
-      background: rgba(255, 255, 255, 0.08);
+    .target {
+      font-size: 1.1em;
+      color: #90caf9;
+      margin-bottom: 30px;
+    }
+
+    /* ==== Info Card ==== */
+    .info {
+      margin: 20px auto;
+      width: 90%;
+      max-width: 500px;
+      padding: 25px;
       border-radius: 20px;
-      box-shadow: 0 0 25px rgba(0, 188, 212, 0.2);
-      padding: 25px 30px;
-      width: 85%;
-      max-width: 340px;
-      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 25px rgba(3, 169, 244, 0.2), inset 0 0 10px rgba(3, 169, 244, 0.15);
       backdrop-filter: blur(8px);
-      animation: fadeIn 1s ease;
+      transition: all 0.3s ease;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    .info:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(3, 169, 244, 0.4);
     }
 
-    /* ==== TEXT STYLES ==== */
-    .status {
-      font-weight: bold;
-      font-size: 1.2rem;
-      margin-bottom: 8px;
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 12px;
+    .info p {
+      font-size: 1.2em;
+      margin: 10px 0;
+      letter-spacing: 0.5px;
+    }
+
+    /* ==== Buttons ==== */
+    button {
+      background: linear-gradient(45deg, #03a9f4, #0288d1);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      margin: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1em;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 15px rgba(3, 169, 244, 0.5);
       transition: 0.3s;
     }
 
-    .status.running {
-      background: rgba(76, 175, 80, 0.2);
-      color: #4caf50;
-      box-shadow: 0 0 10px #4caf50;
-    }
-
-    .status.stopped {
-      background: rgba(244, 67, 54, 0.2);
-      color: #f44336;
-      box-shadow: 0 0 10px #f44336;
-    }
-
-    #countdown {
-      color: #00e676;
-      font-weight: bold;
-      font-size: 1.3rem;
-    }
-
-    /* ==== BUTTONS ==== */
-    .btn-group {
-      margin-top: 15px;
-    }
-
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 10px 22px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 5px;
-      font-weight: 600;
-      color: white;
-      transition: 0.3s ease;
-    }
-
-    .start {
-      background: linear-gradient(135deg, #00c853, #009688);
-      box-shadow: 0 0 15px rgba(0, 200, 83, 0.5);
-    }
-
-    .stop {
-      background: linear-gradient(135deg, #ff5252, #d32f2f);
-      box-shadow: 0 0 15px rgba(255, 82, 82, 0.5);
-    }
-
     button:hover {
+      background: linear-gradient(45deg, #0288d1, #03a9f4);
       transform: scale(1.05);
-      opacity: 0.9;
+      box-shadow: 0 0 25px rgba(3, 169, 244, 0.8);
     }
 
     .download {
-      background: linear-gradient(135deg, #2196f3, #03a9f4);
-      margin-top: 20px;
-      box-shadow: 0 0 15px rgba(33, 150, 243, 0.4);
+      background: linear-gradient(45deg, #43a047, #66bb6a);
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
     }
 
-    /* ==== MOBILE ==== */
-    @media (max-width: 500px) {
-      h1 { font-size: 1.4rem; }
-      .card { width: 90%; padding: 20px; }
-      button { width: 90%; font-size: 15px; }
+    .download:hover {
+      box-shadow: 0 0 25px rgba(129, 199, 132, 0.9);
+      transform: scale(1.05);
+    }
+
+    /* ==== Status Lights ==== */
+    .status-running {
+      color: #00e676;
+      font-weight: bold;
+      text-shadow: 0 0 8px #00e676;
+    }
+
+    .status-stopped {
+      color: #ff5252;
+      font-weight: bold;
+      text-shadow: 0 0 8px #ff1744;
+    }
+
+    footer {
+      margin-top: 50px;
+      font-size: 0.9em;
+      color: #90a4ae;
+      letter-spacing: 0.3px;
+    }
+
+    .dot {
+      height: 12px;
+      width: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .dot-running {
+      background-color: #00e676;
+      box-shadow: 0 0 10px #00e676;
+    }
+
+    .dot-stopped {
+      background-color: #ff5252;
+      box-shadow: 0 0 10px #ff5252;
     }
   </style>
 </head>
 <body>
+  <h1>🌐 Website Pinger Dashboard</h1>
+  <p class="target">Target: <strong>{{ target_url }}</strong></p>
 
-  <h1>🌐 Auto Pinger Dashboard</h1>
-  <p>Target: <b>{{ target_url }}</b></p>
-
-  <div class="card">
-    <p>Status: <span id="status" class="status stopped">Stopped ❌</span></p>
-    <p>Ping Count: <span id="pingCount">0</span></p>
-    <p>Last Ping: <span id="lastPing">-</span></p>
+  <div class="info" id="status-box">
+    <p>Status: <span class="dot dot-stopped" id="status-dot"></span><span id="status">Loading...</span></p>
+    <p>Ping Count: <span id="ping_count">0</span></p>
+    <p>Last Ping: <span id="last_ping">-</span></p>
     <p>Uptime: <span id="uptime">00:00:00</span></p>
-    <p>Next Ping In: <span id="countdown">05:00</span></p>
   </div>
 
-  <div class="btn-group">
-    <button id="startBtn" class="start">▶ Start</button>
-    <button id="stopBtn" class="stop">⏹ Stop</button>
+  <div>
+    <button onclick="startPinger()">▶ Start</button>
+    <button onclick="stopPinger()">⏹ Stop</button>
+    <button class="download" onclick="downloadLogs()">⬇ Download Logs</button>
   </div>
 
-  <button class="download" onclick="window.location='/download'">💾 Download Logs</button>
+  <footer>🚀 Developed by Shaik — Smart Pinger v2.0</footer>
 
   <script>
-    let countdown = 300;
-    let timer, statusCheck;
+    async function fetchStatus() {
+      try {
+        const res = await fetch("/status");
+        const data = await res.json();
 
-    function formatTime(s) {
-      const m = String(Math.floor(s / 60)).padStart(2, "0");
-      const sec = String(s % 60).padStart(2, "0");
-      return `${m}:${sec}`;
-    }
+        const statusEl = document.getElementById("status");
+        const dotEl = document.getElementById("status-dot");
 
-    function updateCountdown() {
-      if (countdown > 0) countdown--;
-      else countdown = 300;
-      document.getElementById("countdown").textContent = formatTime(countdown);
-    }
+        statusEl.textContent = data.status;
+        document.getElementById("ping_count").textContent = data.ping_count;
+        document.getElementById("last_ping").textContent = data.last_ping;
+        document.getElementById("uptime").textContent = data.uptime;
 
-    async function updateStatus() {
-      const res = await fetch("/status");
-      const data = await res.json();
-      document.getElementById("pingCount").textContent = data.ping_count;
-      document.getElementById("lastPing").textContent = data.last_ping;
-      document.getElementById("uptime").textContent = data.uptime;
-
-      const statusEl = document.getElementById("status");
-      if (data.status === "Running") {
-        statusEl.textContent = "Running ✅";
-        statusEl.className = "status running";
-      } else {
-        statusEl.textContent = "Stopped ❌";
-        statusEl.className = "status stopped";
+        if (data.status === "Running") {
+          statusEl.className = "status-running";
+          dotEl.className = "dot dot-running";
+        } else {
+          statusEl.className = "status-stopped";
+          dotEl.className = "dot dot-stopped";
+        }
+      } catch (err) {
+        console.error("Error fetching status:", err);
       }
     }
 
-    document.getElementById("startBtn").addEventListener("click", async () => {
-      await fetch("/start", { method: "POST" });
-      countdown = 300;
-      clearInterval(timer);
-      timer = setInterval(updateCountdown, 1000);
-      if (!statusCheck) statusCheck = setInterval(updateStatus, 2000);
-      updateStatus();
-    });
+    async function startPinger() {
+      const res = await fetch("/start", { method: "POST" });
+      const data = await res.json();
+      alert(data.message || "✅ Pinger started!");
+      fetchStatus();
+    }
 
-    document.getElementById("stopBtn").addEventListener("click", async () => {
-      await fetch("/stop", { method: "POST" });
-      clearInterval(timer);
-      clearInterval(statusCheck);
-      statusCheck = null;
-      document.getElementById("countdown").textContent = "00:00";
-      updateStatus();
-    });
+    async function stopPinger() {
+      const res = await fetch("/stop", { method: "POST" });
+      const data = await res.json();
+      alert("🛑 Pinger stopped.");
+      fetchStatus();
+    }
 
-    // Update every 2s on load
-    updateStatus();
+    function downloadLogs() {
+      window.location.href = "/download";
+    }
+
+    // Auto refresh every 5 seconds
+    setInterval(fetchStatus, 5000);
+    fetchStatus();
   </script>
 </body>
 </html>
