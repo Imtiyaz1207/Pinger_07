@@ -1,105 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pinger Dashboard</title>
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      text-align: center;
-      background: linear-gradient(135deg, #1a73e8, #0a4fbd);
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 500px;
-      margin: 40px auto;
-      background: rgba(255,255,255,0.1);
-      border-radius: 20px;
-      padding: 25px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-    button {
-      background: #34a853;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      margin: 8px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #2a8a43;
-    }
-    .stop {
-      background: #ea4335;
-    }
-    .stop:hover {
-      background: #c73025;
-    }
-    .log-link {
-      color: yellow;
-      text-decoration: underline;
-    }
-    @media (max-width: 600px) {
-      .container {
-        width: 90%;
-      }
-      button {
-        width: 90%;
-        margin: 10px 0;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pinger Dashboard</title>
+<style>
+  body { font-family: "Poppins", sans-serif; text-align:center; background: linear-gradient(135deg,#1a73e8,#0a4fbd); color:white; margin:0; padding:0;}
+  .container { max-width:600px; margin:40px auto; background: rgba(255,255,255,0.1); border-radius:20px; padding:25px; box-shadow:0 0 10px rgba(0,0,0,0.4);}
+  button { background:#34a853; color:white; border:none; padding:12px 25px; margin:8px; font-size:16px; border-radius:8px; cursor:pointer; transition:0.3s;}
+  button:hover { background:#2a8a43;}
+  .stop { background:#ea4335;}
+  .stop:hover { background:#c73025;}
+  .log-link { color: yellow; text-decoration: underline; }
+  table { width:100%; margin-top:20px; border-collapse: collapse; }
+  th, td { padding:10px; border:1px solid rgba(255,255,255,0.3);}
+  th { background: rgba(255,255,255,0.2);}
+  td { text-align:center;}
+  .online { color: #00FF00; font-weight: bold; }
+  .offline { color: #FF0000; font-weight: bold; }
+  @media (max-width:600px){ .container{width:90%; padding:15px;} button{width:90%; margin:10px 0;} table{font-size:12px;} }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🌐 Website Pinger</h1>
-    <h3 id="target">{{ target_url }}</h3>
-
-    <div id="status-box">
-      <p><b>Status:</b> <span id="status">Loading...</span></p>
-      <p><b>Ping Count:</b> <span id="count">0</span></p>
-      <p><b>Last Ping:</b> <span id="last">-</span></p>
-      <p><b>Uptime:</b> <span id="uptime">00:00:00</span></p>
-    </div>
-
-    <div>
-      <button onclick="startPinger()">Start Pinger</button>
-      <button class="stop" onclick="stopPinger()">Stop Pinger</button>
-    </div>
-
-    <br />
-    <a href="/download" class="log-link">📥 Download Logs</a>
+<div class="container" id="container" data-target-urls='{{ target_urls | tojson }}'>
+  <h1>🌐 Website Pinger</h1>
+  <div>
+    <button onclick="startPinger()">Start Pinger</button>
+    <button class="stop" onclick="stopPinger()">Stop Pinger</button>
   </div>
+  <table>
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Status</th>
+        <th>Ping Count</th>
+        <th>Last Ping</th>
+      </tr>
+    </thead>
+    <tbody id="statusTable"></tbody>
+  </table>
+  <p><b>Uptime:</b> <span id="uptime">00:00:00</span></p>
+  <a href="/download" class="log-link">📥 Download Logs</a>
+</div>
 
-  <script>
-    async function refreshStatus() {
-      const res = await fetch("/status");
-      const data = await res.json();
-      document.getElementById("status").innerText = data.status;
-      document.getElementById("count").innerText = data.ping_count;
-      document.getElementById("last").innerText = data.last_ping;
-      document.getElementById("uptime").innerText = data.uptime;
+<script>
+const targetUrls = JSON.parse(document.getElementById('container').dataset.targetUrls);
+
+async function refreshStatus() {
+  try {
+    const res = await fetch("/status_all");
+    const data = await res.json();
+
+    const tbody = document.getElementById("statusTable");
+    tbody.innerHTML = "";
+
+    for (let i = 0; i < targetUrls.length; i++) {
+      const url = targetUrls[i];
+      const statusObj = data[url] || {};
+      const statusCode = statusObj.status || "N/A";
+      const pingCount = statusObj.ping_count || 0;
+      const lastPing = statusObj.last_ping || "-";
+
+      const statusClass = (statusCode === 200) ? "online" : (statusCode === "Error") ? "offline" : "";
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${url}</td>
+        <td class="${statusClass}">${statusCode}</td>
+        <td>${pingCount}</td>
+        <td>${lastPing}</td>
+      `;
+      tbody.appendChild(row);
     }
 
-    async function startPinger() {
-      await fetch("/start", { method: "POST" });
-      refreshStatus();
-    }
+    document.getElementById("uptime").innerText = data.uptime || "00:00:00";
+  } catch (error) {
+    console.error("Error fetching status:", error);
+  }
+}
 
-    async function stopPinger() {
-      await fetch("/stop", { method: "POST" });
-      refreshStatus();
-    }
-
-    // Refresh status every 5 seconds
-    setInterval(refreshStatus, 5000);
+async function startPinger() {
+  try {
+    await fetch("/start", { method: "POST" });
     refreshStatus();
-  </script>
+  } catch (error) {
+    console.error("Error starting pinger:", error);
+  }
+}
+
+async function stopPinger() {
+  try {
+    await fetch("/stop", { method: "POST" });
+    refreshStatus();
+  } catch (error) {
+    console.error("Error stopping pinger:", error);
+  }
+}
+
+// Auto-refresh every 5 seconds
+setInterval(refreshStatus, 5000);
+refreshStatus();
+</script>
 </body>
 </html>
